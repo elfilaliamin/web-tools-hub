@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tools Hub</title>
+<meta name="description" content="A curated collection of small, focused browser tools." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%236366f1'/%3E%3Crect x='4' y='4' width='6' height='6' rx='1.5' fill='white' fill-opacity='.9'/%3E%3Crect x='14' y='4' width='6' height='6' rx='1.5' fill='white' fill-opacity='.9'/%3E%3Crect x='14' y='14' width='6' height='6' rx='1.5' fill='white' fill-opacity='.9'/%3E%3Crect x='4' y='14' width='6' height='6' rx='1.5' fill='white' fill-opacity='.6'/%3E%3C/svg%3E" />
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet" />
+
+<!-- React 18 + Babel (zero build step) -->
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Inter', 'system-ui', 'sans-serif'],
+          display: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+        },
+        colors: {
+          brand: {
+            50: '#eef2ff',
+            100: '#e0e7ff',
+            200: '#c7d2fe',
+            300: '#a5b4fc',
+            400: '#818cf8',
+            500: '#6366f1',
+            600: '#4f46e5',
+            700: '#4338ca',
+            900: '#312e81',
+          },
+        },
+        boxShadow: {
+          glow: '0 0 0 1px rgba(99,102,241,0.15), 0 20px 45px -15px rgba(99,102,241,0.35)',
+        },
+        keyframes: {
+          fadeUp: {
+            '0%': { opacity: 0, transform: 'translateY(12px)' },
+            '100%': { opacity: 1, transform: 'translateY(0)' },
+          },
+        },
+        animation: {
+          fadeUp: 'fadeUp 0.6s ease-out both',
+        },
+      },
+    },
+  };
+</script>
+
+<style>
+  :root { color-scheme: dark; }
+  body {
+    background-color: #020617;
+    background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.05) 1px, transparent 0);
+    background-size: 28px 28px;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+  ::selection { background: #6366f1; color: #fff; }
+  :focus-visible { outline: 2px solid #818cf8; outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+</style>
+</head>
+<body class="text-slate-200">
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef, useMemo } = React;
+
+/* ============================================================
+   DATA — edit these two arrays to add tools / categories
+   ============================================================ */
+
+// Controls the filter pills, in display order. Add new category
+// names here whenever you introduce a tool in a new category.
+const CATEGORIES = ["All", "Images", "PDF", "Dev Tools", "Text"];
+
+// Add new tools here. `icon` must match a key in ICON_PATHS below.
+const TOOLS_DATA = [
+  {
+    id: "img2pdf",
+    name: "Image to PDF",
+    desc: "Convert JPG, PNG, or WebP images into a single, print-ready PDF in seconds.",
+    path: "imagtopdf.html",
+    category: "Images",
+    icon: "FileImage",
+  },
+  {
+    id: "jsonfmt",
+    name: "JSON Formatter",
+    desc: "Prettify, validate, and minify messy JSON with instant syntax highlighting.",
+    path: "jsonformatter.html",
+    category: "Dev Tools",
+    icon: "Code2",
+  },
+  {
+    id: "pdfmerge",
+    name: "PDF Merge & Split",
+    desc: "Combine multiple PDFs into one file, or split a large PDF into separate pages.",
+    path: "pdfmerge.html",
+    category: "PDF",
+    icon: "FileText",
+  },
+  {
+    id: "wordcount",
+    name: "Word & Character Counter",
+    desc: "Count words, characters, sentences, and reading time as you type or paste.",
+    path: "wordcounter.html",
+    category: "Text",
+    icon: "Type",
+  },
+  {
+    id: "imgcompress",
+    name: "Image Compressor",
+    desc: "Shrink image file size right in your browser, with no visible drop in quality.",
+    path: "imagecompressor.html",
+    category: "Images",
+    icon: "FileImage",
+  },
+];
+
+/* ============================================================
+   ICONS — small hand-rolled Lucide-style SVGs (no extra CDN dep)
+   ============================================================ */
+
+const ICON_PATHS = {
+  Search: (
+    <>
+      <circle cx="11" cy="11" r="8" />
+      <path d="m21 21-4.3-4.3" />
+    </>
+  ),
+  X: (
+    <>
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </>
+  ),
+  Github: (
+    <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77 5.44 5.44 0 0 0 3.5 8.55c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" />
+  ),
+  ExternalLink: (
+    <>
+      <path d="M15 3h6v6" />
+      <path d="M10 14 21 3" />
+      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+    </>
+  ),
+  LayoutGrid: (
+    <>
+      <rect width="7" height="7" x="3" y="3" rx="1" />
+      <rect width="7" height="7" x="14" y="3" rx="1" />
+      <rect width="7" height="7" x="14" y="14" rx="1" />
+      <rect width="7" height="7" x="3" y="14" rx="1" />
+    </>
+  ),
+  SearchX: (
+    <>
+      <path d="m13.5 8.5-5 5" />
+      <path d="m8.5 8.5 5 5" />
+      <circle cx="10" cy="10" r="7" />
+      <path d="m21 21-4.3-4.3" />
+    </>
+  ),
+  FileImage: (
+    <>
+      <path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4" />
+      <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+      <circle cx="10" cy="12" r="2" />
+      <path d="m20 17-1.09-1.09a2 2 0 0 0-2.82 0L10 22" />
+    </>
+  ),
+  Code2: (
+    <>
+      <path d="m18 16 4-4-4-4" />
+      <path d="m6 8-4 4 4 4" />
+      <path d="m14.5 4-5 16" />
+    </>
+  ),
+  FileText: (
+    <>
+      <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+      <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+      <path d="M10 9H8" />
+      <path d="M16 13H8" />
+      <path d="M16 17H8" />
+    </>
+  ),
+  Type: (
+    <>
+      <polyline points="4 7 4 4 20 4 20 7" />
+      <line x1="9" x2="15" y1="20" y2="20" />
+      <line x1="12" x2="12" y1="4" y2="20" />
+    </>
+  ),
+};
+
+function Icon({ name, className = "w-5 h-5", strokeWidth = 1.8 }) {
+  const paths = ICON_PATHS[name];
+  if (!paths) return null;
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      {paths}
+    </svg>
+  );
+}
+
+/* ============================================================
+   CATEGORY TINTS
+   ============================================================ */
+
+const CATEGORY_STYLES = {
+  Images: {
+    icon: "bg-sky-500/10 text-sky-400",
+    pill: "bg-sky-500/10 text-sky-300 ring-1 ring-inset ring-sky-500/20",
+  },
+  PDF: {
+    icon: "bg-rose-500/10 text-rose-400",
+    pill: "bg-rose-500/10 text-rose-300 ring-1 ring-inset ring-rose-500/20",
+  },
+  "Dev Tools": {
+    icon: "bg-brand-500/10 text-brand-400",
+    pill: "bg-brand-500/10 text-brand-300 ring-1 ring-inset ring-brand-500/20",
+  },
+  Text: {
+    icon: "bg-amber-500/10 text-amber-400",
+    pill: "bg-amber-500/10 text-amber-300 ring-1 ring-inset ring-amber-500/20",
+  },
+};
+const DEFAULT_CATEGORY_STYLE = {
+  icon: "bg-slate-500/10 text-slate-400",
+  pill: "bg-slate-500/10 text-slate-300 ring-1 ring-inset ring-slate-500/20",
+};
+function getCategoryStyle(cat) {
+  return CATEGORY_STYLES[cat] || DEFAULT_CATEGORY_STYLE;
+}
+
+/* ============================================================
+   COMPONENTS
+   ============================================================ */
+
+function Header({ toolCount }) {
+  return (
+    <header className="sticky top-0 z-40 border-b border-white/5 bg-slate-950/80 backdrop-blur-md">
+      <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-brand-600 to-violet-600 flex items-center justify-center shadow-lg shadow-brand-500/20">
+            <Icon name="LayoutGrid" className="w-4 h-4 text-white" strokeWidth={2} />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="font-display font-bold text-white text-lg tracking-tight">Tools Hub</span>
+            <span className="hidden sm:inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-xs text-slate-400">
+              {toolCount} tools
+            </span>
+          </div>
+        </div>
+
+        {/* Replace with your own repo URL */}
+        <a
+          href="https://github.com/your-username/tools-hub"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="View source on GitHub"
+          className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-300 transition-all duration-300 hover:border-white/20 hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400/50"
+        >
+          <Icon name="Github" className="w-4 h-4" strokeWidth={1.8} />
+          <span className="hidden sm:inline">Source</span>
+        </a>
+      </div>
+    </header>
+  );
+}
+
+function Hero({ query, setQuery, searchRef }) {
+  return (
+    <section className="relative overflow-hidden">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute -top-24 left-1/4 w-72 h-72 rounded-full bg-brand-600/25 blur-3xl"></div>
+        <div className="absolute top-10 right-1/4 w-72 h-72 rounded-full bg-violet-600/20 blur-3xl"></div>
+      </div>
+
+      <div className="max-w-3xl mx-auto px-6 pt-16 pb-10 text-center">
+        <h1 className="animate-fadeUp font-display text-4xl sm:text-5xl font-bold text-white tracking-tight">
+          Your toolbox, in one place.
+        </h1>
+        <p
+          className="animate-fadeUp mt-4 text-slate-400 text-base sm:text-lg"
+          style={{ animationDelay: "80ms" }}
+        >
+          A growing collection of small, focused tools that live right in your browser.
+        </p>
+
+        <div className="animate-fadeUp mt-8 relative" style={{ animationDelay: "160ms" }}>
+          <Icon
+            name="Search"
+            className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500"
+            strokeWidth={1.8}
+          />
+          <input
+            ref={searchRef}
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search tools by name or description..."
+            className="w-full rounded-2xl border border-white/10 bg-white/5 py-3.5 pl-11 pr-16 text-sm text-slate-100 outline-none transition-all duration-300 placeholder:text-slate-500 focus:border-brand-500/50 focus:ring-2 focus:ring-brand-500/20"
+          />
+          {query ? (
+            <button
+              onClick={() => setQuery("")}
+              aria-label="Clear search"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-500 transition-colors duration-200 hover:bg-white/10 hover:text-slate-200"
+            >
+              <Icon name="X" className="w-4 h-4" strokeWidth={2} />
+            </button>
+          ) : (
+            <kbd className="absolute right-3.5 top-1/2 hidden -translate-y-1/2 items-center rounded-md border border-white/10 bg-white/5 px-1.5 py-0.5 font-mono text-xs text-slate-500 sm:inline-flex">
+              /
+            </kbd>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function CategoryFilter({ categories, active, setActive }) {
+  return (
+    <div className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap sm:overflow-visible [&::-webkit-scrollbar]:hidden">
+      {categories.map((cat) => {
+        const isActive = active === cat;
+        return (
+          <button
+            key={cat}
+            onClick={() => setActive(cat)}
+            className={
+              "whitespace-nowrap rounded-full border px-4 py-1.5 text-sm font-medium transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400/50 " +
+              (isActive
+                ? "border-brand-500/40 bg-brand-500/15 text-brand-300"
+                : "border-white/10 bg-white/5 text-slate-400 hover:border-white/20 hover:text-slate-200")
+            }
+          >
+            {cat}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function ToolCard({ tool }) {
+  const style = getCategoryStyle(tool.category);
+  return (
+    <div className="group flex flex-col rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-brand-500/50 hover:shadow-glow">
+      <div className="flex items-start justify-between">
+        <div className={"flex h-11 w-11 items-center justify-center rounded-xl " + style.icon}>
+          <Icon name={tool.icon} className="w-5 h-5" strokeWidth={1.8} />
+        </div>
+        <span className={"rounded-full px-2.5 py-1 text-xs font-medium " + style.pill}>
+          {tool.category}
+        </span>
+      </div>
+
+      <h3 className="mt-4 font-display text-base font-semibold text-white">{tool.name}</h3>
+      <p className="mt-1.5 flex-1 text-sm text-slate-400 line-clamp-2">{tool.desc}</p>
+
+      <a
+        href={tool.path}
+        className="mt-6 inline-flex items-center justify-center gap-2 rounded-xl border border-brand-500/20 bg-brand-500/10 py-2.5 text-sm font-medium text-brand-300 transition-all duration-300 hover:border-brand-500/40 hover:bg-brand-500/20 hover:text-brand-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400/50"
+      >
+        Open Tool
+        <Icon name="ExternalLink" className="w-3.5 h-3.5" strokeWidth={2} />
+      </a>
+    </div>
+  );
+}
+
+function ToolGrid({ tools }) {
+  return (
+    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {tools.map((tool) => (
+        <ToolCard key={tool.id} tool={tool} />
+      ))}
+    </div>
+  );
+}
+
+function EmptyState({ hasTools, onClear }) {
+  return (
+    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 py-20 text-center">
+      <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/5">
+        <Icon name="SearchX" className="w-5 h-5 text-slate-500" strokeWidth={1.8} />
+      </div>
+      {hasTools ? (
+        <>
+          <h3 className="mt-4 font-display font-semibold text-white">No tools found</h3>
+          <p className="mt-1 max-w-xs text-sm text-slate-500">
+            Try a different search term or category.
+          </p>
+          <button
+            onClick={onClear}
+            className="mt-5 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-300 transition-all duration-300 hover:border-white/20 hover:text-white"
+          >
+            Clear filters
+          </button>
+        </>
+      ) : (
+        <>
+          <h3 className="mt-4 font-display font-semibold text-white">No tools yet</h3>
+          <p className="mt-1 max-w-xs text-sm text-slate-500">
+            Add your first tool to the TOOLS_DATA array in index.html.
+          </p>
+        </>
+      )}
+    </div>
+  );
+}
+
+function Footer() {
+  return (
+    <footer className="border-t border-white/5 py-8">
+      <p className="text-center text-xs text-slate-600">
+        Tools Hub — add new tools by editing TOOLS_DATA in index.html.
+      </p>
+    </footer>
+  );
+}
+
+function App() {
+  const [query, setQuery] = useState("");
+  const [activeCategory, setActiveCategory] = useState("All");
+  const searchRef = useRef(null);
+
+  // Press "/" anywhere to jump into search, like GitHub's search shortcut.
+  useEffect(() => {
+    function handleKey(e) {
+      if (e.key !== "/") return;
+      const tag = document.activeElement && document.activeElement.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+      e.preventDefault();
+      searchRef.current && searchRef.current.focus();
+    }
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, []);
+
+  const filteredTools = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return TOOLS_DATA.filter((tool) => {
+      const matchesCategory = activeCategory === "All" || tool.category === activeCategory;
+      const matchesQuery =
+        !q || tool.name.toLowerCase().includes(q) || tool.desc.toLowerCase().includes(q);
+      return matchesCategory && matchesQuery;
+    });
+  }, [query, activeCategory]);
+
+  return (
+    <div className="flex min-h-screen flex-col">
+      <Header toolCount={TOOLS_DATA.length} />
+      <Hero query={query} setQuery={setQuery} searchRef={searchRef} />
+
+      <main className="mx-auto w-full max-w-6xl flex-1 px-6 pb-24">
+        <CategoryFilter categories={CATEGORIES} active={activeCategory} setActive={setActiveCategory} />
+
+        <p className="mb-4 mt-6 text-sm text-slate-500">
+          Showing <span className="font-medium text-slate-300">{filteredTools.length}</span> of{" "}
+          {TOOLS_DATA.length} tools
+          {activeCategory !== "All" ? ` in ${activeCategory}` : ""}
+        </p>
+
+        {filteredTools.length > 0 ? (
+          <ToolGrid tools={filteredTools} />
+        ) : (
+          <EmptyState
+            hasTools={TOOLS_DATA.length > 0}
+            onClear={() => {
+              setQuery("");
+              setActiveCategory("All");
+            }}
+          />
+        )}
+      </main>
+
+      <Footer />
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App />);
+</script>
+</body>
+</html>
