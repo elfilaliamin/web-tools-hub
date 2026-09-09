@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CoolTrack — Task Cooldown Manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --bg:           #f0f2f5;
+  --surface:      #ffffff;
+  --surface2:     #f7f8fa;
+  --surface3:     #eef0f4;
+  --border:       #e0e3ea;
+  --border2:      #c8cdd8;
+  --accent:       #6448FA;
+  --accent-soft:  #FDF1DD;
+  --accent-hover: #4230A6;
+  --ready-bg:     #e8f5e9;
+  --ready-fg:     #2e7d32;
+  --ready-border: #a5d6a7;
+  --active-bg:    #fff8e1;
+  --active-fg:    #f57f17;
+  --active-border:#ffe082;
+  --text:         #1c1e21;
+  --text2:        #606770;
+  --text3:        #9ea3ad;
+  --shadow-sm:    0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
+  --shadow-md:    0 4px 16px rgba(0,0,0,.09),0 1px 4px rgba(0,0,0,.06);
+  --shadow-hover: 0 8px 28px rgba(0,0,0,.13),0 2px 6px rgba(0,0,0,.07);
+  --radius-sm:    8px;
+  --radius:       14px;
+  --radius-lg:    20px;
+  --font:         'DM Sans', sans-serif;
+  --font-mono:    'DM Mono', monospace;
+  --ease:         cubic-bezier(.4,0,.2,1);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.5;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+/* ── HEADER ── */
+header {
+  position: sticky; top: 0; z-index: 200;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+.header-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text);
+  flex-shrink: 0;
+}
+.logo-icon {
+  width: 32px; height: 32px;
+  background: var(--accent);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem;
+}
+.logo span { color: var(--accent); }
+
+.header-search { flex: 1; max-width: 360px; position: relative; }
+.header-search svg {
+  position: absolute; left: 12px; top: 50%;
+  transform: translateY(-50%);
+  color: var(--text3); pointer-events: none;
+  width: 16px; height: 16px;
+}
+.header-search input {
+  width: 100%;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 24px;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: .875rem;
+  padding: 8px 14px 8px 38px;
+  outline: none;
+  transition: border-color .2s var(--ease), background .2s;
+}
+.header-search input:focus { border-color: var(--accent); background: var(--surface); }
+.header-search input::placeholder { color: var(--text3); }
+.header-actions { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font); font-size: .875rem; font-weight: 600;
+  border: none; border-radius: var(--radius-sm);
+  padding: 9px 18px; cursor: pointer;
+  transition: background .15s var(--ease), box-shadow .15s, transform .1s;
+  white-space: nowrap; outline: none;
+}
+.btn-primary { background: var(--accent); color: #fff; box-shadow: 0 2px 8px rgba(230,0,35,.25); }
+.btn-primary:hover { background: var(--accent-hover); box-shadow: 0 4px 14px rgba(230,0,35,.35); transform: translateY(-1px); }
+.btn-primary:active { transform: none; }
+.btn-secondary { background: var(--surface2); color: var(--text2); border: 1.5px solid var(--border); }
+.btn-secondary:hover { background: var(--surface3); border-color: var(--border2); color: var(--text); }
+
+#sound-toggle {
+  display: flex; align-items: center; gap: 6px;
+  font-family: var(--font); font-size: .8rem; font-weight: 600;
+  color: var(--text2);
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 7px 13px; cursor: pointer;
+  transition: all .15s var(--ease);
+}
+#sound-toggle:hover { border-color: var(--border2); color: var(--text); }
+#sound-toggle.on { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+
+/* ── TOOLBAR ── */
+.toolbar { background: var(--surface); border-bottom: 1px solid var(--border); }
+.toolbar-inner {
+  max-width: 1200px; margin: 0 auto; padding: 10px 24px;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.toolbar-label { font-size: .78rem; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .05em; }
+select {
+  background: var(--surface2); border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text);
+  font-family: var(--font); font-size: .85rem; font-weight: 500;
+  padding: 7px 12px; cursor: pointer; outline: none; transition: border-color .15s;
+}
+select:focus { border-color: var(--accent); }
+
+/* ── GRID ── */
+.main { max-width: 1200px; margin: 0 auto; padding: 28px 24px; }
+#grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 18px;
+}
+#empty {
+  grid-column: 1 / -1; display: none;
+  flex-direction: column; align-items: center; justify-content: center;
+  padding: 80px 20px; text-align: center;
+}
+#empty.visible { display: flex; }
+#empty .empty-icon {
+  width: 72px; height: 72px; background: var(--surface3);
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 2rem; margin-bottom: 16px; color: var(--text3);
+}
+#empty h3 { font-size: 1.1rem; font-weight: 600; color: var(--text2); margin-bottom: 6px; }
+#empty p  { font-size: .875rem; color: var(--text3); }
+
+/* ── CARDS ── */
+.card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow .2s var(--ease), border-color .2s, transform .2s;
+  animation: cardIn .28s var(--ease) both;
+  position: relative;
+}
+@keyframes cardIn {
+  from { opacity:0; transform:translateY(14px) scale(.98); }
+  to   { opacity:1; transform:none; }
+}
+.card:hover { box-shadow: var(--shadow-hover); border-color: var(--border2); transform: translateY(-2px); }
+.card.active { border-color: var(--active-border); }
+
+/* Card image */
+.card-img-wrap {
+  position: relative; width: 100%;
+  background: var(--surface3); overflow: hidden;
+  flex-shrink: 0;
+}
+.card-img-wrap img {
+  display: block; width: 100%; height: 180px;
+  object-fit: cover;
+  transition: transform .3s var(--ease);
+}
+.card:hover .card-img-wrap img { transform: scale(1.03); }
+.card-img-placeholder {
+  height: 64px; display: flex; align-items: center; justify-content: center;
+  font-size: 1.6rem; color: var(--border2);
+  background: linear-gradient(135deg,var(--surface2) 0%,var(--surface3) 100%);
+}
+
+/* Card body */
+.card-body { padding: 16px 16px 10px; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+.card-header-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.card-title { font-size: 1rem; font-weight: 700; color: var(--text); line-height: 1.3; flex: 1; }
+.card-util-btns { display: flex; gap: 2px; flex-shrink: 0; opacity: 0; transition: opacity .15s; }
+.card:hover .card-util-btns { opacity: 1; }
+.btn-util {
+  background: transparent; border: none; color: var(--text3);
+  border-radius: 6px; width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: .85rem; transition: all .15s;
+}
+.btn-util:hover { background: var(--surface3); color: var(--text2); }
+.btn-util.delete:hover { background: #fff0f1; color: var(--accent); }
+
+.card-meta { font-family: var(--font-mono); font-size: .72rem; color: var(--text3); display: flex; align-items: center; gap: 5px; }
+
+.status-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font-mono); font-size: .75rem; font-weight: 500;
+  padding: 5px 12px; border-radius: 20px; width: fit-content; transition: all .2s;
+}
+.status-badge.ready   { background: var(--ready-bg);  color: var(--ready-fg);  border: 1px solid var(--ready-border); }
+.status-badge.countdown { background: var(--active-bg); color: var(--active-fg); border: 1px solid var(--active-border); }
+.badge-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+.badge-dot.pulse { animation: dotPulse 1.5s ease infinite; }
+@keyframes dotPulse {
+  0%,100% { opacity:1; transform:scale(1); }
+  50%      { opacity:.4; transform:scale(.65); }
+}
+
+.progress-wrap { display: flex; flex-direction: column; gap: 4px; }
+.progress-track { background: var(--surface3); border-radius: 6px; height: 6px; overflow: hidden; }
+.progress-fill {
+  height: 100%; border-radius: 6px;
+  background: linear-gradient(90deg,#e60023 0%,#ff6b6b 100%);
+  transition: width 1s linear; min-width: 2px;
+}
+.progress-fill.done { background: linear-gradient(90deg,#2e7d32,#43a047); }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-family: var(--font-mono); font-size: .68rem; color: var(--text3);
+}
+
+.counter { display: flex; align-items: center; gap: 6px; font-size: .8rem; color: var(--text3); }
+.counter-pill {
+  background: var(--surface3); border: 1px solid var(--border);
+  border-radius: 12px; padding: 2px 8px;
+  font-family: var(--font-mono); font-size: .72rem; font-weight: 500; color: var(--text2);
+}
+
+.card-footer {
+  padding: 10px 16px 14px; display: flex; gap: 8px;
+  border-top: 1px solid var(--border); margin-top: auto;
+}
+.btn-start {
+  flex: 1; font-family: var(--font); font-size: .85rem; font-weight: 700;
+  background: var(--accent); color: #fff; border: none;
+  border-radius: var(--radius-sm); padding: 10px 16px; cursor: pointer;
+  transition: all .15s var(--ease);
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.btn-start:hover:not(:disabled) { background: var(--accent-hover); box-shadow: 0 3px 12px rgba(230,0,35,.3); transform: translateY(-1px); }
+.btn-start:active:not(:disabled) { transform: none; }
+.btn-start:disabled { background: var(--surface3); color: var(--text3); cursor: not-allowed; box-shadow: none; transform: none; }
+.btn-reset {
+  font-family: var(--font); font-size: .8rem; font-weight: 600;
+  background: var(--surface2); color: var(--text2); border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); padding: 9px 14px; cursor: pointer; transition: all .15s;
+}
+.btn-reset:hover { background: var(--surface3); border-color: var(--border2); color: var(--text); }
+
+/* ── MODAL ── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,.45);
+  backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px; animation: fadeIn .18s ease;
+}
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+.modal {
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg); padding: 28px 28px 24px;
+  width: 100%; max-width: 460px;
+  box-shadow: 0 24px 64px rgba(0,0,0,.18);
+  animation: modalIn .22s cubic-bezier(.34,1.4,.64,1) both;
+}
+@keyframes modalIn {
+  from { opacity:0; transform:scale(.93) translateY(16px); }
+  to   { opacity:1; transform:none; }
+}
+.modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; }
+.modal-title  { font-size: 1.15rem; font-weight: 700; color: var(--text); }
+.modal-title span { color: var(--accent); }
+.modal-close {
+  background: var(--surface2); border: 1.5px solid var(--border);
+  border-radius: 8px; width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: .85rem; color: var(--text2); transition: all .15s;
+}
+.modal-close:hover { background: var(--surface3); color: var(--text); }
+.form-group { margin-bottom: 16px; }
+.form-label {
+  display: block; font-size: .78rem; font-weight: 600; color: var(--text2);
+  text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px;
+}
+.form-input {
+  width: 100%; background: var(--surface2); border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text);
+  font-family: var(--font); font-size: .9rem;
+  padding: 10px 13px; outline: none;
+  transition: border-color .15s, background .15s;
+}
+.form-input:focus { border-color: var(--accent); background: var(--surface); }
+.form-input::placeholder { color: var(--text3); }
+
+/* Duration hh:mm:ss */
+.duration-row {
+  display: flex; align-items: flex-end; gap: 4px;
+}
+.duration-unit { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+.duration-unit-label { font-size: .7rem; font-weight: 500; color: var(--text3); text-align: center; }
+.duration-input {
+  width: 100%; background: var(--surface2); border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text);
+  font-family: var(--font-mono); font-size: 1.1rem; font-weight: 500;
+  padding: 10px 4px; text-align: center; outline: none;
+  transition: border-color .15s, background .15s;
+  -moz-appearance: textfield;
+}
+.duration-input::-webkit-inner-spin-button,
+.duration-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+.duration-input:focus { border-color: var(--accent); background: var(--surface); }
+.duration-input::placeholder { color: var(--text3); font-size: .85rem; }
+.duration-sep {
+  font-size: 1.3rem; font-weight: 700; color: var(--text3);
+  padding-bottom: 10px; flex-shrink: 0;
+}
+.duration-preview {
+  margin-top: 6px; font-family: var(--font-mono); font-size: .75rem;
+  color: var(--text3); text-align: center;
+}
+.duration-preview strong { color: var(--accent); }
+.form-hint { font-size: .72rem; color: var(--text3); margin-top: 5px; }
+
+/* Image preview */
+.img-preview-wrap {
+  margin-top: 8px; border-radius: var(--radius-sm); overflow: hidden;
+  border: 1.5px solid var(--border); background: var(--surface3); display: none;
+}
+.img-preview-wrap.visible { display: block; }
+.img-preview-wrap img { width: 100%; max-height: 140px; object-fit: cover; display: block; }
+.img-preview-error { padding: 12px; font-size: .78rem; color: var(--accent); text-align: center; }
+
+.modal-actions { display: flex; gap: 8px; margin-top: 22px; }
+
+/* ── TOASTS ── */
+#toast-container {
+  position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+  display: flex; flex-direction: column; gap: 8px; pointer-events: none;
+}
+.toast {
+  background: var(--text); color: #fff; border-radius: 10px;
+  padding: 11px 18px; font-size: .83rem; font-weight: 500;
+  box-shadow: 0 8px 24px rgba(0,0,0,.25);
+  display: flex; align-items: center; gap: 8px;
+  animation: toastIn .3s cubic-bezier(.34,1.4,.64,1) both;
+  pointer-events: none;
+}
+.toast.success .toast-icon { color: #69db7c; }
+.toast.error   .toast-icon { color: #ff8787; }
+.toast.info    .toast-icon { color: #74c0fc; }
+.toast.exiting { animation: toastOut .25s ease forwards; }
+@keyframes toastIn  { from{opacity:0;transform:translateX(20px) scale(.95)} to{opacity:1;transform:none} }
+@keyframes toastOut { to{opacity:0;transform:translateX(20px) scale(.95)} }
+
+@media(max-width:640px){
+  .header-inner  { padding: 0 14px; }
+  .header-search { display: none; }
+  .toolbar-inner { padding: 8px 14px; }
+  .main          { padding: 16px 14px; }
+  #grid          { gap: 12px; }
+  .modal         { padding: 22px 18px 18px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-icon" style="color: white;">⏱</div>
+      Cool<span>Track</span>
+    </div>
+    <div class="header-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input type="text" id="search" placeholder="Search tasks…" oninput="renderCards()" />
+    </div>
+    <div class="header-actions">
+      <button id="sound-toggle" onclick="toggleSound()">
+        <span id="sound-icon">🔔</span>
+        <span id="sound-label">Sound</span>
+      </button>
+      <button class="btn btn-primary" onclick="openModal()">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Add Task
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="toolbar">
+  <div class="toolbar-inner">
+    <span class="toolbar-label">Sort by</span>
+    <select id="sort-select" onchange="renderCards()">
+      <option value="default">Default order</option>
+      <option value="ready">Ready first</option>
+      <option value="cooldown">Cooldown remaining</option>
+      <option value="usage">Most used today</option>
+    </select>
+  </div>
+</div>
+
+<div class="main">
+  <div id="grid">
+    <div id="empty">
+      <div class="empty-icon">⏱</div>
+      <h3>No tasks yet</h3>
+      <p>Click <strong>+ Add Task</strong> to create your first cooldown card.</p>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div id="modal-overlay" class="modal-overlay" style="display:none" onclick="handleOverlayClick(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">New <span>Task</span></div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="f-name">Task Name</label>
+      <input type="text" id="f-name" class="form-input" placeholder="e.g. Upload to Zazzle" maxlength="60" />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Cooldown Duration</label>
+      <div class="duration-row">
+        <div class="duration-unit">
+          <input type="number" id="f-hh" class="duration-input" placeholder="00" min="0" max="999"
+            oninput="clampVal(this,999);updateDurPreview()" onblur="padVal(this)" />
+          <div class="duration-unit-label">Hours</div>
+        </div>
+        <div class="duration-sep">:</div>
+        <div class="duration-unit">
+          <input type="number" id="f-mm" class="duration-input" placeholder="00" min="0" max="59"
+            oninput="clampVal(this,59);updateDurPreview()" onblur="padVal(this)" />
+          <div class="duration-unit-label">Minutes</div>
+        </div>
+        <div class="duration-sep">:</div>
+        <div class="duration-unit">
+          <input type="number" id="f-ss" class="duration-input" placeholder="00" min="0" max="59"
+            oninput="clampVal(this,59);updateDurPreview()" onblur="padVal(this)" />
+          <div class="duration-unit-label">Seconds</div>
+        </div>
+      </div>
+      <div class="duration-preview" id="dur-preview">Enter a duration above</div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="f-img">
+        Image URL
+        <span style="font-weight:400;color:var(--text3);text-transform:none;font-size:.78rem;margin-left:4px">(optional)</span>
+      </label>
+      <input type="url" id="f-img" class="form-input" placeholder="https://i.imgur.com/example.jpg" oninput="scheduleImgPreview()" />
+      <div class="form-hint">Paste a direct link to any .jpg, .png, .webp or .gif image</div>
+      <div class="img-preview-wrap" id="img-preview-wrap">
+        <img id="img-preview-el" src="" alt="Preview"
+          onload="imgPreviewOk()" onerror="imgPreviewErr()" />
+        <div id="img-preview-error" class="img-preview-error" style="display:none">⚠ Could not load this image URL</div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="modal-save-btn" onclick="saveModal()" style="flex:1">Add Card</button>
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+/* ════════════════════════════════════
+   CoolTrack — state + storage
+   ════════════════════════════════════ */
+let tasks   = [];
+let soundOn = true;
+let editingId = null;
+const SK = 'cooltrack_v3';
+
+function save() { localStorage.setItem(SK, JSON.stringify({tasks, soundOn})); }
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem(SK) || '{}');
+    tasks   = d.tasks   ?? [];
+    soundOn = d.soundOn ?? true;
+  } catch { tasks = []; soundOn = true; }
+}
+
+/* daily counter */
+function todayKey() { return new Date().toISOString().slice(0,10); }
+function getCount(t) { return t.dailyCounts?.[todayKey()] ?? 0; }
+function incCount(t) {
+  const k = todayKey();
+  if (!t.dailyCounts) t.dailyCounts = {};
+  t.dailyCounts[k] = (t.dailyCounts[k]||0) + 1;
+  const ks = Object.keys(t.dailyCounts).sort();
+  while (ks.length > 7) delete t.dailyCounts[ks.shift()];
+}
+
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+
+/* time helpers */
+const isActive = t => !!t.endTime && Date.now() < t.endTime;
+const remaining = t => Math.max(0,(t.endTime||0) - Date.now());
+const pad = n => String(n).padStart(2,'0');
+
+function fmtMs(ms) {
+  const s = Math.ceil(ms/1000);
+  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
+  return h ? `${h}:${pad(m)}:${pad(sec)}` : `${pad(m)}:${pad(sec)}`;
+}
+
+function fmtDuration(totalSec) {
+  if (!totalSec) return '—';
+  const h = Math.floor(totalSec/3600), m = Math.floor((totalSec%3600)/60), s = totalSec%60;
+  return [h&&`${h}h`, m&&`${m}m`, s&&`${s}s`].filter(Boolean).join(' ') || '0s';
+}
+
+/* duration input helpers */
+function clampVal(el, max) {
+  const v = parseInt(el.value);
+  if (!isNaN(v)) el.value = Math.max(0, Math.min(max, v));
+}
+function padVal(el) {
+  const v = parseInt(el.value);
+  if (!isNaN(v) && el.value !== '') el.value = pad(v);
+}
+function updateDurPreview() {
+  const sec = getDurSec();
+  const el  = document.getElementById('dur-preview');
+  el.innerHTML = sec ? `Total: <strong>${fmtDuration(sec)}</strong>` : 'Enter a duration above';
+}
+function getDurSec() {
+  return (parseInt(document.getElementById('f-hh').value)||0)*3600
+       + (parseInt(document.getElementById('f-mm').value)||0)*60
+       + (parseInt(document.getElementById('f-ss').value)||0);
+}
+
+/* image preview */
+let imgTimer = null;
+function scheduleImgPreview() {
+  clearTimeout(imgTimer);
+  imgTimer = setTimeout(loadImgPreview, 700);
+}
+function loadImgPreview() {
+  const url  = document.getElementById('f-img').value.trim();
+  const wrap = document.getElementById('img-preview-wrap');
+  const el   = document.getElementById('img-preview-el');
+  const err  = document.getElementById('img-preview-error');
+  if (!url) { wrap.classList.remove('visible'); return; }
+  el.style.display  = 'none';
+  err.style.display = 'none';
+  wrap.classList.add('visible');
+  el.src = url; /* onload/onerror will reveal the right element */
+}
+function imgPreviewOk()  {
+  document.getElementById('img-preview-el').style.display   = 'block';
+  document.getElementById('img-preview-error').style.display = 'none';
+}
+function imgPreviewErr() {
+  document.getElementById('img-preview-el').style.display   = 'none';
+  document.getElementById('img-preview-error').style.display = 'block';
+}
+
+/* sound */
+let audioCtx = null;
+function playReady() {
+  if (!soundOn) return;
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    [[523.25,0],[659.25,.13],[783.99,.26]].forEach(([f,t])=>{
+      const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+      o.connect(g); g.connect(audioCtx.destination);
+      o.frequency.value=f; o.type='sine';
+      const at=audioCtx.currentTime+t;
+      g.gain.setValueAtTime(0,at);
+      g.gain.linearRampToValueAtTime(.15,at+.04);
+      g.gain.exponentialRampToValueAtTime(.001,at+.38);
+      o.start(at); o.stop(at+.39);
+    });
+  } catch(e){}
+}
+
+async function notify(title, body) {
+  if (!('Notification' in window)) return;
+  if (Notification.permission==='default') await Notification.requestPermission();
+  if (Notification.permission==='granted') new Notification(title, {body});
+}
+
+/* toasts */
+function toast(msg, type='success', dur=2600) {
+  const icons = {success:'✓', error:'✕', info:'ℹ'};
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span class="toast-icon">${icons[type]||'·'}</span> ${msg}`;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(()=>{ el.classList.add('exiting'); setTimeout(()=>el.remove(), 260); }, dur);
+}
+
+/* sound toggle */
+function toggleSound() {
+  soundOn = !soundOn; save(); updateSoundBtn();
+  toast(soundOn ? 'Sound enabled' : 'Sound muted', 'info');
+}
+function updateSoundBtn() {
+  const btn = document.getElementById('sound-toggle');
+  document.getElementById('sound-icon').textContent  = soundOn ? '🔔' : '🔕';
+  document.getElementById('sound-label').textContent = soundOn ? 'Sound' : 'Muted';
+  btn.className = soundOn ? 'on' : '';
+}
+
+/* modal */
+function openModal(id=null) {
+  editingId = id;
+  document.getElementById('img-preview-wrap').classList.remove('visible');
+  document.getElementById('img-preview-el').src = '';
+
+  if (id) {
+    const t = tasks.find(x=>x.id===id);
+    document.getElementById('f-name').value = t.name;
+    const h = Math.floor(t.cooldownSec/3600);
+    const m = Math.floor((t.cooldownSec%3600)/60);
+    const s = t.cooldownSec%60;
+    document.getElementById('f-hh').value = pad(h);
+    document.getElementById('f-mm').value = pad(m);
+    document.getElementById('f-ss').value = pad(s);
+    document.getElementById('f-img').value = t.img||'';
+    document.getElementById('modal-title').innerHTML  = 'Edit <span>Task</span>';
+    document.getElementById('modal-save-btn').textContent = 'Save Changes';
+    updateDurPreview();
+    if (t.img) loadImgPreview();
+  } else {
+    ['f-name','f-hh','f-mm','f-ss','f-img'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('modal-title').innerHTML  = 'New <span>Task</span>';
+    document.getElementById('modal-save-btn').textContent = 'Add Card';
+    document.getElementById('dur-preview').innerHTML  = 'Enter a duration above';
+  }
+
+  document.getElementById('modal-overlay').style.display='flex';
+  setTimeout(()=>document.getElementById('f-name').focus(), 60);
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').style.display='none';
+  editingId=null;
+}
+
+function handleOverlayClick(e) {
+  if (e.target.id==='modal-overlay') closeModal();
+}
+
+function saveModal() {
+  const name = document.getElementById('f-name').value.trim();
+  const sec  = getDurSec();
+  const img  = document.getElementById('f-img').value.trim();
+
+  if (!name) { toast('Please enter a task name.', 'error'); return; }
+  if (!sec || sec<1) { toast('Please set a cooldown of at least 1 second.', 'error'); return; }
+
+  if (editingId) {
+    const t = tasks.find(x=>x.id===editingId);
+    t.name=name; t.cooldownSec=sec; t.img=img;
+    toast('Task updated!');
+  } else {
+    tasks.push({id:uid(), name, cooldownSec:sec, img, endTime:null, dailyCounts:{}});
+    toast('Task added!');
+  }
+  save(); closeModal(); renderCards();
+}
+
+/* task actions */
+function startTask(id) {
+  const t = tasks.find(x=>x.id===id);
+  if (!t||isActive(t)) return;
+  t.endTime = Date.now() + t.cooldownSec*1000;
+  incCount(t); save(); renderCards();
+  if ('Notification' in window && Notification.permission==='default') Notification.requestPermission();
+}
+function resetTask(id) {
+  const t=tasks.find(x=>x.id===id); if(!t) return;
+  t.endTime=null; save(); renderCards(); toast('Timer reset.','info');
+}
+function deleteTask(id) {
+  if (!confirm('Delete this task?')) return;
+  tasks=tasks.filter(x=>x.id!==id); save(); renderCards(); toast('Task removed.','info');
+}
+
+/* render */
+function getSortedFiltered() {
+  const q  = (document.getElementById('search')?.value||'').toLowerCase();
+  const by = document.getElementById('sort-select').value;
+  let list = tasks.filter(t=>t.name.toLowerCase().includes(q));
+  if (by==='ready')    list.sort((a,b)=>(!isActive(a)&&isActive(b)?-1:(isActive(a)&&!isActive(b)?1:0)));
+  if (by==='cooldown') list.sort((a,b)=>remaining(a)-remaining(b));
+  if (by==='usage')    list.sort((a,b)=>getCount(b)-getCount(a));
+  return list;
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function buildCard(task) {
+  const active = isActive(task);
+  const rem    = remaining(task);
+  const total  = task.cooldownSec*1000;
+  const pct    = active ? ((total-rem)/total*100).toFixed(2) : 100;
+  const count  = getCount(task);
+
+  const card   = document.createElement('div');
+  card.className = 'card'+(active?' active':'');
+  card.dataset.id = task.id;
+
+  /* Image — always render the <img> tag when a URL exists */
+  const imgSection = task.img && task.img.trim()
+    ? `<div class="card-img-wrap">
+         <img src="${esc(task.img.trim())}"
+              alt="${esc(task.name)}"
+              loading="lazy"
+              onerror="this.closest('.card-img-wrap').innerHTML='<div class=\\'card-img-placeholder\\'>🖼</div>'" />
+       </div>`
+    : `<div class="card-img-wrap"><div class="card-img-placeholder">🖼</div></div>`;
+
+  const badge = active
+    ? `<span class="status-badge countdown"><span class="badge-dot pulse"></span>${fmtMs(rem)}</span>`
+    : `<span class="status-badge ready"><span class="badge-dot"></span>Ready</span>`;
+
+  const elapsed   = total-rem;
+  const elLabel   = active ? fmtMs(elapsed)+' elapsed' : 'Complete';
+  const remLabel  = active ? fmtMs(rem)+' left' : fmtDuration(task.cooldownSec);
+
+  const startBtnHTML = active
+    ? `<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Cooling down…`
+    : `<svg width="13" height="13" fill="currentColor" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg> Start`;
+
+  card.innerHTML = `
+    ${imgSection}
+    <div class="card-body">
+      <div class="card-header-row">
+        <div class="card-title">${esc(task.name)}</div>
+        <div class="card-util-btns">
+          <button class="btn-util" title="Edit" onclick="openModal('${task.id}')">
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4z"/>
+            </svg>
+          </button>
+          <button class="btn-util delete" title="Delete" onclick="deleteTask('${task.id}')">
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="card-meta">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+        </svg>
+        ${fmtDuration(task.cooldownSec)} cooldown
+      </div>
+      ${badge}
+      <div class="progress-wrap">
+        <div class="progress-track">
+          <div class="progress-fill${active?'':' done'}" style="width:${pct}%"></div>
+        </div>
+        <div class="progress-label"><span>${elLabel}</span><span>${remLabel}</span></div>
+      </div>
+      <div class="counter">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>
+        </svg>
+        Started today: <span class="counter-pill">${count}×</span>
+      </div>
+    </div>
+    <div class="card-footer">
+      <button class="btn-start" ${active?'disabled':''} onclick="startTask('${task.id}')">${startBtnHTML}</button>
+      <button class="btn-reset" onclick="resetTask('${task.id}')">Reset</button>
+    </div>`;
+
+  return card;
+}
+
+function renderCards() {
+  const grid  = document.getElementById('grid');
+  const empty = document.getElementById('empty');
+  grid.querySelectorAll('.card').forEach(c=>c.remove());
+  const list = getSortedFiltered();
+  if (list.length===0) { empty.classList.add('visible'); return; }
+  empty.classList.remove('visible');
+  list.forEach((task,i)=>{ const c=buildCard(task); c.style.animationDelay=`${i*.04}s`; grid.appendChild(c); });
+}
+
+/* live tick */
+function tick() {
+  let needRender = false;
+  document.querySelectorAll('.card').forEach(card=>{
+    const id=card.dataset.id, task=tasks.find(t=>t.id===id);
+    if (!task) return;
+    const active=isActive(task), wasActive=card.classList.contains('active');
+    if (wasActive&&!active) { playReady(); notify(`✅ ${task.name}`,'Cooldown complete — ready!'); needRender=true; return; }
+    if (!active) return;
+    const rem=remaining(task), total=task.cooldownSec*1000, pct=((total-rem)/total*100).toFixed(2);
+    const badge=card.querySelector('.status-badge');
+    if (badge) badge.innerHTML=`<span class="badge-dot pulse"></span>${fmtMs(rem)}`;
+    const fill=card.querySelector('.progress-fill');
+    if (fill) fill.style.width=pct+'%';
+    const labels=card.querySelectorAll('.progress-label span');
+    if (labels.length===2) { labels[0].textContent=fmtMs(total-rem)+' elapsed'; labels[1].textContent=fmtMs(rem)+' left'; }
+  });
+  if (needRender) renderCards();
+}
+
+/* keyboard shortcuts */
+document.addEventListener('keydown', e=>{
+  const tag=document.activeElement.tagName;
+  if (e.key==='Escape') { closeModal(); return; }
+  if (e.key==='Enter'&&document.getElementById('modal-overlay').style.display!=='none') { if(tag==='INPUT') saveModal(); return; }
+  if ((e.key==='n'||e.key==='N')&&tag!=='INPUT'&&!e.ctrlKey&&!e.metaKey) openModal();
+});
+
+/* boot */
+load();
+
+/* migrate old tasks that stored cooldown in minutes */
+tasks.forEach(t=>{
+  if (t.cooldown!==undefined && t.cooldownSec===undefined) {
+    t.cooldownSec = t.cooldown*60; delete t.cooldown;
+  }
+});
+
+/* seed demo tasks */
+if (tasks.length===0) {
+  tasks=[
+    {id:uid(),name:'Upload to Zazzle',   cooldownSec:3600,img:'',endTime:null,dailyCounts:{}},
+    {id:uid(),name:'Post Design',         cooldownSec:1800,img:'',endTime:null,dailyCounts:{}},
+    {id:uid(),name:'Render Batch Images', cooldownSec: 900,img:'',endTime:null,dailyCounts:{}},
+  ];
+  save();
+}
+
+updateSoundBtn();
+renderCards();
+setInterval(tick, 1000);
+</script>
+</body>
+</html>

@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Web App Organizer</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='5' y1='4' x2='43' y2='44' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%23f43f5e'/%3E%3Cstop offset='.48' stop-color='%23d946ef'/%3E%3Cstop offset='1' stop-color='%234f46e5'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='3' y='3' width='42' height='42' rx='12' fill='url(%23g)'/%3E%3Cg fill='white'%3E%3Crect x='11' y='11' width='11' height='11' rx='3'/%3E%3Crect x='26' y='11' width='11' height='11' rx='3' opacity='.88'/%3E%3Crect x='11' y='26' width='11' height='11' rx='3' opacity='.88'/%3E%3Crect x='26' y='26' width='11' height='11' rx='3'/%3E%3C/g%3E%3C/svg%3E">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'] }
+      }
+    }
+  }
+</script>
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="min-h-screen bg-zinc-50 text-zinc-900 font-sans antialiased">
+
+<header class="sticky top-0 z-10 bg-white/90 backdrop-blur-md border-b border-zinc-200">
+  <div class="w-full max-w-[1600px] mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+    <h1 class="flex items-center gap-2 text-lg font-extrabold tracking-tight">
+      <span class="shrink-0"><svg viewBox="0 0 48 48" aria-hidden="true" class="w-7 h-7">
+  <defs>
+    <linearGradient id="logoGradient" x1="5" y1="4" x2="43" y2="44" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f43f5e"/>
+      <stop offset=".48" stop-color="#d946ef"/>
+      <stop offset="1" stop-color="#4f46e5"/>
+    </linearGradient>
+  </defs>
+  <rect x="3" y="3" width="42" height="42" rx="12" fill="url(#logoGradient)"/>
+  <rect x="11" y="11" width="11" height="11" rx="3" fill="white"/>
+  <rect x="26" y="11" width="11" height="11" rx="3" fill="white" opacity=".88"/>
+  <rect x="11" y="26" width="11" height="11" rx="3" fill="white" opacity=".88"/>
+  <rect x="26" y="26" width="11" height="11" rx="3" fill="white"/>
+</svg></span> Web App Organizer
+    </h1>
+    <div class="flex items-center gap-1">
+      <button id="exportBtn" type="button" title="Export backup" class="p-2 rounded-full text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 transition motion-reduce:transition-none">
+        <i data-lucide="download" class="w-[18px] h-[18px]"></i>
+      </button>
+      <button id="importBtn" type="button" title="Import backup" class="p-2 rounded-full text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 transition motion-reduce:transition-none">
+        <i data-lucide="upload" class="w-[18px] h-[18px]"></i>
+      </button>
+      <input type="file" id="importFile" accept="application/json" class="hidden">
+    </div>
+  </div>
+</header>
+
+<main class="w-full max-w-[1600px] mx-auto px-4 sm:px-6 py-5">
+
+  <!-- compose bar: doubles as the "add app" trigger -->
+  <button id="add" type="button" class="w-full flex items-center gap-3 bg-white border border-zinc-200 rounded-2xl px-4 py-3 shadow-sm hover:shadow-md hover:border-zinc-300 transition motion-reduce:transition-none text-left">
+    <div class="p-[2px] rounded-full bg-gradient-to-tr from-amber-400 via-fuchsia-500 to-indigo-500 shrink-0">
+      <div class="bg-white rounded-full p-[2px]">
+        <div class="w-9 h-9 rounded-full bg-zinc-100 flex items-center justify-center"><svg viewBox="0 0 48 48" aria-hidden="true" class="w-6 h-6">
+  <defs>
+    <linearGradient id="logoGradient" x1="5" y1="4" x2="43" y2="44" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f43f5e"/>
+      <stop offset=".48" stop-color="#d946ef"/>
+      <stop offset="1" stop-color="#4f46e5"/>
+    </linearGradient>
+  </defs>
+  <rect x="3" y="3" width="42" height="42" rx="12" fill="url(#logoGradient)"/>
+  <rect x="11" y="11" width="11" height="11" rx="3" fill="white"/>
+  <rect x="26" y="11" width="11" height="11" rx="3" fill="white" opacity=".88"/>
+  <rect x="11" y="26" width="11" height="11" rx="3" fill="white" opacity=".88"/>
+  <rect x="26" y="26" width="11" height="11" rx="3" fill="white"/>
+</svg></div>
+      </div>
+    </div>
+    <span class="flex-1 text-zinc-500 text-sm sm:text-base">What app are you adding today?</span>
+    <span class="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-gradient-to-tr from-fuchsia-500 to-indigo-500 text-white text-sm font-semibold px-4 py-2">
+      <i data-lucide="plus" class="w-4 h-4"></i> Add
+    </span>
+  </button>
+
+  <!-- search -->
+  <div class="mt-4 relative">
+    <i data-lucide="search" class="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+    <input id="search" type="search" placeholder="Search your apps"
+      class="w-full pl-10 pr-4 py-2.5 rounded-full bg-zinc-100 text-sm text-zinc-800 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-fuchsia-400 focus:bg-white transition motion-reduce:transition-none">
+  </div>
+
+  <div class="mt-4 flex flex-col sm:flex-row gap-2">
+    <select id="sortBy" class="flex-1 px-3 py-2.5 rounded-xl bg-zinc-100 text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-fuchsia-400">
+      <option value="manual">Sort by: Manual</option>
+      <option value="name-asc">Sort by: Name A–Z</option>
+      <option value="name-desc">Sort by: Name Z–A</option>
+      <option value="category">Sort by: Category</option>
+      <option value="tags">Sort by: Tags</option>
+    </select>
+    <select id="groupBy" class="flex-1 px-3 py-2.5 rounded-xl bg-zinc-100 text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-fuchsia-400">
+      <option value="none">Group by: None</option>
+      <option value="category">Group by: Categories</option>
+      <option value="tags">Group by: Tags</option>
+    </select>
+  </div>
+
+  <div id="count" class="mt-3 mb-1 text-xs font-medium text-zinc-400"></div>
+
+  <div id="apps" class="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-4"></div>
+</main>
+
+<dialog id="dialog" class="rounded-2xl p-0 border-0 w-[min(420px,92vw)] shadow-2xl [&::backdrop]:bg-zinc-900/60 [&::backdrop]:backdrop-blur-sm">
+<form id="form" class="p-6 grid gap-3">
+  <h2 id="dialogTitle" class="text-lg font-bold mb-1">Add Web App</h2>
+  <input id="name" placeholder="App name" required
+    class="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia-400">
+  <input id="url" type="url" placeholder="https://example.com" required
+    class="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia-400">
+  <div>
+    <label class="block text-xs font-semibold text-zinc-500 mb-1.5">Category</label>
+    <input id="category" list="categorySuggestions" autocomplete="off"
+      placeholder="Category (e.g. Development, Design)"
+      class="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia-400">
+    <datalist id="categorySuggestions"></datalist>
+  </div>
+  <div class="grid grid-cols-2 gap-2">
+    <button type="button" id="iconModeBtn" class="mode-btn py-2 rounded-xl border border-fuchsia-300 bg-fuchsia-50 text-fuchsia-700 text-sm font-semibold">Use Icon</button>
+    <button type="button" id="imageModeBtn" class="mode-btn py-2 rounded-xl border border-zinc-200 bg-white text-zinc-600 text-sm font-semibold">Use Image URL</button>
+  </div>
+
+  <div id="iconMode">
+    <div id="icons" class="flex flex-wrap gap-1.5"></div>
+  </div>
+
+  <div id="imageMode" class="hidden">
+    <input id="imageUrl" type="url" placeholder="Image URL (https://...)"
+      class="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia-400">
+    <div id="imagePreview" class="hidden mt-2 rounded-xl bg-zinc-50 border border-zinc-200 p-3 text-center">
+      <img id="previewImage" src="" alt="Image preview" class="mx-auto w-20 h-20 object-contain rounded-xl">
+      <p class="text-xs text-zinc-400 mt-2">Image preview</p>
+    </div>
+  </div>
+
+  <div>
+    <label class="block text-xs font-semibold text-zinc-500 mb-1.5">Tags</label>
+    <div id="tagInputBox" class="min-h-[44px] w-full flex flex-wrap items-center gap-1.5 px-2.5 py-2 rounded-xl border border-zinc-200 bg-white focus-within:ring-2 focus-within:ring-fuchsia-400">
+      <div id="tagChips" class="contents"></div>
+      <input id="tagInput" type="text" placeholder="Type a tag and press Enter"
+        class="min-w-[140px] flex-1 outline-none text-sm py-1 bg-transparent">
+    </div>
+    <p class="text-[11px] text-zinc-400 mt-1">Press Enter or comma to add a tag. Click × to remove it.</p>
+  </div>
+  <div class="flex gap-2 mt-2">
+    <button type="button" id="cancel" class="flex-1 py-2.5 rounded-xl bg-zinc-100 text-zinc-700 font-semibold text-sm hover:bg-zinc-200 transition motion-reduce:transition-none">Cancel</button>
+    <button class="flex-1 py-2.5 rounded-xl bg-gradient-to-tr from-fuchsia-500 to-indigo-500 text-white font-semibold text-sm hover:opacity-90 transition motion-reduce:transition-none">Save</button>
+  </div>
+</form>
+</dialog>
+
+<div id="toast" class="fixed left-1/2 bottom-6 -translate-x-1/2 translate-y-2 opacity-0 pointer-events-none transition-all duration-200 motion-reduce:transition-none bg-zinc-900 text-white text-sm font-medium px-4 py-2.5 rounded-full shadow-xl z-50"></div>
+
+<script>
+const apps=JSON.parse(localStorage.getItem("myWebApps")||"[]");
+const $=id=>document.getElementById(id);
+const iconChoices=["🧰","💻","🌐","📊","🛠️","📝","📁","🎨","⚡","🔥","🤖","🧠","📚","🎯","💼","🔧","☁️","🗂️","🔗","⭐"];
+let selected="🧰";
+let imageMode=false;
+let currentTags=[];
+
+function markSelected(btn){
+  document.querySelectorAll("#icons button").forEach(x=>{
+    x.classList.remove("ring-2","ring-fuchsia-400","bg-fuchsia-50","border-fuchsia-300");
+  });
+  btn.classList.add("ring-2","ring-fuchsia-400","bg-fuchsia-50","border-fuchsia-300");
+}
+
+iconChoices.forEach(i=>{
+  const b=document.createElement("button");
+  b.type="button";
+  b.textContent=i;
+  b.className="text-xl border border-zinc-200 bg-white rounded-lg p-1.5 hover:border-zinc-300 transition";
+  b.onclick=()=>{
+    selected=i;
+    imageMode=false;
+    updateMediaMode();
+    markSelected(b);
+  };
+  $("icons").appendChild(b);
+});
+
+function updateMediaMode(){
+  $("iconMode").classList.toggle("hidden",imageMode);
+  $("imageMode").classList.toggle("hidden",!imageMode);
+
+  $("iconModeBtn").className=imageMode
+    ?"mode-btn py-2 rounded-xl border border-zinc-200 bg-white text-zinc-600 text-sm font-semibold"
+    :"mode-btn py-2 rounded-xl border border-fuchsia-300 bg-fuchsia-50 text-fuchsia-700 text-sm font-semibold";
+  $("imageModeBtn").className=imageMode
+    ?"mode-btn py-2 rounded-xl border border-fuchsia-300 bg-fuchsia-50 text-fuchsia-700 text-sm font-semibold"
+    :"mode-btn py-2 rounded-xl border border-zinc-200 bg-white text-zinc-600 text-sm font-semibold";
+}
+
+$("iconModeBtn").onclick=()=>{
+  imageMode=false;
+  updateMediaMode();
+};
+$("imageModeBtn").onclick=()=>{
+  imageMode=true;
+  updateMediaMode();
+};
+
+markSelected($("icons").firstChild);
+
+
+let editingIndex=null;   // null = adding, otherwise index of app being edited
+let dragIndex=null;      // index currently being dragged
+let searchTerm="";
+let sortBy="manual";
+let groupBy="none";
+
+function save(){localStorage.setItem("myWebApps",JSON.stringify(apps))}
+function normalizeTags(tags){
+  if(Array.isArray(tags)) return tags.map(x=>String(x).trim()).filter(Boolean);
+  return String(tags||"").split(",").map(x=>x.trim()).filter(Boolean);
+}
+function appCategory(a){return (a.category||"Uncategorized").trim()||"Uncategorized"}
+function appTags(a){return normalizeTags(a.tags)}
+function escapeHtml(s){return s.replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+
+function showToast(msg){
+  const t=$("toast"); t.textContent=msg;
+  t.classList.remove("opacity-0","translate-y-2");
+  t.classList.add("opacity-100","translate-y-0");
+  clearTimeout(showToast._t);
+  showToast._t=setTimeout(()=>{
+    t.classList.remove("opacity-100","translate-y-0");
+    t.classList.add("opacity-0","translate-y-2");
+  },2200);
+}
+
+function compareApps(a,b){
+  if(sortBy==="name-asc") return a.name.localeCompare(b.name);
+  if(sortBy==="name-desc") return b.name.localeCompare(a.name);
+  if(sortBy==="category") return appCategory(a).localeCompare(appCategory(b)) || a.name.localeCompare(b.name);
+  if(sortBy==="tags") return appTags(a).join(", ").localeCompare(appTags(b).join(", ")) || a.name.localeCompare(b.name);
+  return 0;
+}
+
+function render(dragHighlight){
+  const box=$("apps");
+  box.innerHTML="";
+  const term=searchTerm.trim().toLowerCase();
+
+  let indices=apps.map((a,i)=>i).filter(i=>{
+    const a=apps[i];
+    return !term || [a.name,a.url,appCategory(a),...appTags(a)].join(" ").toLowerCase().includes(term);
+  });
+
+  if(sortBy!=="manual") indices.sort((i,j)=>compareApps(apps[i],apps[j]));
+
+  $("count").textContent=apps.length
+    ? `${indices.length} of ${apps.length} app${apps.length===1?"":"s"}${term?" matching “"+searchTerm+"”":""}` : "";
+
+  if(!apps.length){
+    box.innerHTML='<div class="col-span-full text-center py-16 text-zinc-400"><i data-lucide="layout-grid" class="w-8 h-8 mx-auto mb-3 text-zinc-300"></i><p class="font-semibold text-zinc-600">No apps yet</p><p class="text-sm mt-1">Tap the compose bar above to add your first web app.</p></div>';
+    if(window.lucide)lucide.createIcons();
+    return;
+  }
+
+  if(!indices.length){
+    box.innerHTML='<div class="col-span-full text-center py-16 text-zinc-400"><i data-lucide="search" class="w-8 h-8 mx-auto mb-3 text-zinc-300"></i><p class="font-semibold text-zinc-600">No matches</p><p class="text-sm mt-1">Try a different search term.</p></div>';
+    if(window.lucide)lucide.createIcons();
+    return;
+  }
+
+  const dragAllowed=!term && sortBy==="manual" && groupBy==="none";
+
+  function card(i){
+    const a=apps[i];
+    const dragClasses=i===dragHighlight?"opacity-50 scale-105 -rotate-1 shadow-2xl ring-2 ring-fuchsia-300":"";
+    const iconHtml=a.imageUrl
+      ? `<img src="${escapeHtml(a.imageUrl)}" alt="" class="w-full h-full object-contain rounded-full" onerror="this.style.display='none';this.parentElement.textContent='🖼️'">`
+      : escapeHtml(a.icon||"🧰");
+    const tags=appTags(a);
+
+    const c=document.createElement("div");
+    c.dataset.index=i;
+    c.className=`card group relative bg-white border border-zinc-200 rounded-2xl pt-5 pb-4 px-3 text-center hover:shadow-lg hover:-translate-y-0.5 transition-all duration-150 ${dragClasses}`;
+    c.innerHTML=`
+      <div class="absolute top-2 left-2 right-2 flex items-center justify-between opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+        ${dragAllowed?'<span class="text-zinc-300 p-1 cursor-grab touch-none" title="Drag anywhere on the card"><i data-lucide="grip-vertical" class="w-4 h-4"></i></span>':'<span></span>'}
+        <div class="flex items-center gap-1">
+          <button type="button" class="edit p-1 rounded-full text-zinc-400 hover:text-indigo-600 hover:bg-indigo-50" title="Edit"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
+          <button type="button" class="del p-1 rounded-full text-zinc-400 hover:text-rose-600 hover:bg-rose-50" title="Delete"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+        </div>
+      </div>
+      <a href="${a.url}" target="_blank" rel="noopener" class="block">
+        <div class="mx-auto mb-2.5 w-14 h-14 p-[2.5px] rounded-full bg-gradient-to-tr from-amber-400 via-fuchsia-500 to-indigo-500">
+          <div class="bg-white rounded-full p-[2.5px] w-full h-full">
+            <div class="icon w-full h-full rounded-full bg-zinc-100 flex items-center justify-center text-xl overflow-hidden">${iconHtml}</div>
+          </div>
+        </div>
+        <div class="name font-semibold text-sm text-zinc-900 truncate">${escapeHtml(a.name)}</div>
+        <div class="text-xs text-zinc-500 truncate">${escapeHtml(appCategory(a))}</div>
+        ${tags.length?`<div class="mt-2 flex flex-wrap justify-center gap-1">${tags.map(t=>`<span class="px-2 py-0.5 rounded-full bg-zinc-100 text-[10px] text-zinc-500">${escapeHtml(t)}</span>`).join("")}</div>`:""}
+      </a>`;
+
+    c.querySelector(".del").onclick=e=>{
+      e.stopPropagation();
+      if(confirm(`Delete "${a.name}"?`)){apps.splice(i,1);save();render();showToast("App deleted")}
+    };
+    c.querySelector(".edit").onclick=e=>{e.stopPropagation();openDialog(i)};
+
+    // Entire card is draggable; no dedicated drag handle is required.
+    if(dragAllowed){
+      c.addEventListener("pointerdown",e=>{
+        if(e.button!==0 || e.target.closest("button,a")) return;
+        e.preventDefault();
+        dragIndex=i;
+        render(i);
+        document.addEventListener("pointermove",onPointerMove);
+        document.addEventListener("pointerup",onPointerUp,{once:true});
+      });
+    }
+    return c;
+  }
+
+  if(groupBy==="none"){
+    indices.forEach(i=>box.appendChild(card(i)));
+  }else{
+    const groups=new Map();
+    indices.forEach(i=>{
+      const keys=groupBy==="category" ? [appCategory(apps[i])] : (appTags(apps[i]).length?appTags(apps[i]):["Untagged"]);
+      keys.forEach(key=>{
+        if(!groups.has(key))groups.set(key,[]);
+        groups.get(key).push(i);
+      });
+    });
+    [...groups.keys()].sort((a,b)=>a.localeCompare(b)).forEach(group=>{
+      const heading=document.createElement("div");
+      heading.className="col-span-full flex items-center gap-3 mt-2";
+      heading.innerHTML=`<h3 class="text-sm font-bold text-zinc-700">${escapeHtml(group)}</h3><div class="h-px flex-1 bg-zinc-200"></div>`;
+      box.appendChild(heading);
+      groups.get(group).forEach(i=>box.appendChild(card(i)));
+    });
+  }
+
+  if(window.lucide)lucide.createIcons();
+}
+
+function onPointerMove(e){
+  if(dragIndex===null)return;
+  const el=document.elementFromPoint(e.clientX,e.clientY);
+  const overCard=el&&el.closest(".card");
+  if(!overCard)return;
+
+  const fromIndex=dragIndex;
+  const toIndex=Number(overCard.dataset.index);
+  if(Number.isNaN(toIndex)||fromIndex===toIndex)return;
+
+  const [moved]=apps.splice(fromIndex,1);
+  apps.splice(toIndex,0,moved);
+  dragIndex=toIndex;
+  render(dragIndex);
+}
+
+function onPointerUp(){
+  document.removeEventListener("pointermove",onPointerMove);
+  if(dragIndex===null)return;
+  dragIndex=null;
+  save();
+  render();
+}
+
+function updateCategorySuggestions(){
+  const list=$("categorySuggestions");
+  const categories=[...new Set(
+    apps.map(a=>(a.category||"").trim()).filter(Boolean)
+  )].sort((a,b)=>a.localeCompare(b));
+
+  list.innerHTML="";
+  categories.forEach(category=>{
+    const option=document.createElement("option");
+    option.value=category;
+    list.appendChild(option);
+  });
+}
+
+function resetForm(){
+  $("form").reset();
+  selected="🧰";
+  imageMode=false;
+  currentTags=[];
+  $("imagePreview").classList.add("hidden");
+  $("previewImage").src="";
+  $("tagInput").value="";
+  renderTagChips();
+  updateMediaMode();
+  markSelected($("icons").firstChild);
+}
+
+function openDialog(index){
+  resetForm();
+  updateCategorySuggestions();
+  if(index===undefined || index===null){
+    editingIndex=null;
+    $("dialogTitle").textContent="Add Web App";
+  }else{
+    editingIndex=index;
+    const a=apps[index];
+    $("dialogTitle").textContent="Edit Web App";
+    $("name").value=a.name;
+    $("url").value=a.url;
+    $("category").value=appCategory(a)==="Uncategorized"?"":appCategory(a);
+    currentTags=appTags(a).slice();
+    renderTagChips();
+    $("imageUrl").value=a.imageUrl||"";
+    if(a.imageUrl){
+      imageMode=true;
+      updateMediaMode();
+      updateImagePreview();
+    }else{
+      imageMode=false;
+      selected=a.icon||"🧰";
+      updateMediaMode();
+      const match=[...document.querySelectorAll("#icons button")].find(x=>x.textContent===selected);
+      if(match)markSelected(match);
+    }
+  }
+  $("dialog").showModal();
+}
+
+$("add").onclick=()=>openDialog(null);
+$("cancel").onclick=()=>$("dialog").close();
+$("dialog").addEventListener("click",e=>{if(e.target===$("dialog"))$("dialog").close()});
+
+function updateImagePreview(){
+  const url=$("imageUrl").value.trim();
+  if(!url){
+    $("imagePreview").classList.add("hidden");
+    $("previewImage").src="";
+    return;
+  }
+  $("previewImage").src=url;
+  $("imagePreview").classList.remove("hidden");
+}
+$("imageUrl").addEventListener("input",updateImagePreview);
+$("previewImage").onerror=()=>{
+  $("imagePreview").classList.add("hidden");
+};
+
+function renderTagChips(){
+  const box=$("tagChips");
+  box.innerHTML="";
+  currentTags.forEach((tag,index)=>{
+    const chip=document.createElement("span");
+    chip.className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-zinc-200 text-zinc-800 text-xs font-medium";
+    chip.innerHTML=`<span>${escapeHtml(tag)}</span><button type="button" class="tag-remove text-zinc-500 hover:text-rose-600 font-bold leading-none" aria-label="Remove ${escapeHtml(tag)}">×</button>`;
+    chip.querySelector(".tag-remove").onclick=()=>{
+      currentTags.splice(index,1);
+      renderTagChips();
+    };
+    box.appendChild(chip);
+  });
+}
+
+function addTag(value){
+  const tag=value.trim().replace(/^,+|,+$/g,"").trim();
+  if(!tag)return;
+  if(!currentTags.some(x=>x.toLowerCase()===tag.toLowerCase())){
+    currentTags.push(tag);
+    renderTagChips();
+  }
+  $("tagInput").value="";
+}
+
+$("tagInput").addEventListener("keydown",e=>{
+  if(e.key==="Enter" || e.key===","){
+    e.preventDefault();
+    addTag($("tagInput").value);
+  }
+  if(e.key==="Backspace" && !$("tagInput").value && currentTags.length){
+    currentTags.pop();
+    renderTagChips();
+  }
+});
+
+$("tagInput").addEventListener("blur",()=>{
+  if($("tagInput").value.trim()) addTag($("tagInput").value);
+});
+
+$("form").onsubmit=e=>{
+  e.preventDefault();
+  let url=$("url").value.trim(); if(!/^https?:\/\//i.test(url))url="https://"+url;
+  const name=$("name").value.trim();
+  const imageUrl=imageMode ? $("imageUrl").value.trim() : "";
+  const icon=imageMode ? "" : selected;
+  const category=$("category").value.trim();
+  const tags=currentTags.slice();
+
+  const dupe=apps.some((a,i)=>a.url===url && i!==editingIndex);
+  if(dupe && !confirm("An app with this URL already exists. Add it anyway?"))return;
+
+  if(editingIndex===null){
+    apps.push({name,url,icon,imageUrl,category,tags});
+    showToast("App added");
+  }else{
+    apps[editingIndex]={...apps[editingIndex],name,url,icon,imageUrl,category,tags};
+    showToast("App updated");
+  }
+  save();
+  updateCategorySuggestions();
+  render();
+  $("dialog").close();
+};
+
+$("search").addEventListener("input",e=>{searchTerm=e.target.value;render()});
+$("sortBy").addEventListener("change",e=>{sortBy=e.target.value;render()});
+$("groupBy").addEventListener("change",e=>{groupBy=e.target.value;render()});
+
+$("exportBtn").onclick=()=>{
+  const blob=new Blob([JSON.stringify(apps,null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="my-web-apps-backup.json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast("Exported backup");
+};
+
+$("importBtn").onclick=()=>$("importFile").click();
+$("importFile").onchange=async e=>{
+  const file=e.target.files[0];
+  e.target.value="";
+  if(!file)return;
+  try{
+    const data=JSON.parse(await file.text());
+    if(!Array.isArray(data))throw new Error("not an array");
+    const existing=new Set(apps.map(a=>a.url));
+    let added=0;
+    data.forEach(item=>{
+      if(item && typeof item.name==="string" && typeof item.url==="string" && !existing.has(item.url)){
+        apps.push({name:item.name,url:item.url,icon:typeof item.icon==="string"?item.icon:"🧰",imageUrl:typeof item.imageUrl==="string"?item.imageUrl:"",category:typeof item.category==="string"?item.category:"",tags:normalizeTags(item.tags)});
+        existing.add(item.url);
+        added++;
+      }
+    });
+    save();
+    updateCategorySuggestions();
+    render();
+    showToast(added ? `Imported ${added} app${added===1?"":"s"}` : "No new apps to import");
+  }catch(err){
+    showToast("Invalid backup file");
+  }
+};
+
+render();
+</script>
+</body>
+</html>
