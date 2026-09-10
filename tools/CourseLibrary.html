@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Course Library - Track Learning & Progress</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --primary: #582be8;
+      --primary-hover: #481fd4;
+      --primary-light: #f0ecfc;
+      --danger: #dc2626;
+      --danger-hover: #b91c1c;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --radius: 16px;
+      --radius-sm: 8px;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+      --shadow-md: 0 4px 20px -2px rgba(0, 0, 0, 0.06);
+      --shadow-hover: 0 12px 28px -4px rgba(0, 0, 0, 0.12);
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      padding: 2.5rem 1.5rem 5rem;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1240px;
+    }
+
+    /* Header Section */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 2.5rem;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+    }
+
+    .brand h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--text-main);
+    }
+
+    .brand p {
+      color: var(--text-muted);
+      margin-top: 0.35rem;
+      font-size: 1rem;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.65rem 1.25rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: var(--transition);
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+    .btn-primary:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+
+    .btn-outline {
+      background: #fff;
+      border-color: var(--border-color);
+      color: var(--text-main);
+    }
+    .btn-outline:hover {
+      background: #f1f5f9;
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: #fff;
+    }
+    .btn-danger:hover {
+      background: var(--danger-hover);
+    }
+
+    .btn-secondary {
+      background: #f1f5f9;
+      color: var(--text-main);
+    }
+    .btn-secondary:hover {
+      background: #e2e8f0;
+    }
+
+    /* Controls Bar */
+    .controls-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.75rem;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .section-title {
+      font-size: 1.4rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .badge-count {
+      background: #e2e8f0;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-weight: 700;
+      padding: 0.15rem 0.6rem;
+      border-radius: 9999px;
+    }
+
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .search-box input {
+      padding: 0.55rem 0.9rem;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      outline: none;
+      font-size: 0.88rem;
+      background: #fff;
+      min-width: 200px;
+      transition: var(--transition);
+    }
+    .search-box input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(88, 43, 232, 0.12);
+    }
+
+    select.filter-select {
+      padding: 0.55rem 0.9rem;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      outline: none;
+      font-size: 0.88rem;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    /* Course Cards Grid */
+    .courses-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 1.75rem;
+    }
+
+    .course-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+      display: flex;
+      flex-direction: column;
+      border: 1px solid rgba(226, 232, 240, 0.8);
+      transition: var(--transition);
+      position: relative;
+    }
+
+    .course-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-hover);
+    }
+
+    .card-thumb-container {
+      position: relative;
+      width: 100%;
+      height: 180px;
+      background: #e2e8f0;
+      overflow: hidden;
+    }
+
+    .card-thumb {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .platform-tag {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(8px);
+      color: #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+
+    .platform-tag.udemy { background: rgba(164, 53, 240, 0.85); }
+    .platform-tag.coursera { background: rgba(0, 86, 210, 0.85); }
+    .platform-tag.skillshare { background: rgba(0, 255, 132, 0.85); color: #000; }
+    .platform-tag.youtube { background: rgba(255, 0, 0, 0.85); }
+    .platform-tag.edx { background: rgba(183, 1, 1, 0.85); }
+
+    .card-content {
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    .course-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-main);
+      line-height: 1.4;
+      margin-bottom: 0.6rem;
+      min-height: 2.8rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .course-meta {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      margin-bottom: 0.35rem;
+    }
+
+    .course-meta span {
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    /* Progress UI */
+    .progress-section {
+      margin-top: 1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.82rem;
+      font-weight: 600;
+      margin-bottom: 0.35rem;
+      color: var(--text-muted);
+    }
+
+    .progress-bar-bg {
+      background: #e2e8f0;
+      height: 9px;
+      border-radius: 999px;
+      overflow: hidden;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .progress-bar-fill {
+      background: linear-gradient(90deg, #6366f1, var(--primary));
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.3s ease;
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 0.6rem;
+      margin-top: auto;
+    }
+
+    .card-actions .btn {
+      flex: 1;
+      padding: 0.55rem;
+      font-size: 0.85rem;
+    }
+
+    .btn-edit {
+      flex: 0 0 38px !important;
+      padding: 0 !important;
+      background: #f1f5f9;
+      color: var(--text-muted);
+    }
+    .btn-edit:hover {
+      background: #e2e8f0;
+      color: var(--text-main);
+    }
+
+    /* Empty state */
+    .empty-state {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 4.5rem 2rem;
+      background: #fff;
+      border-radius: var(--radius);
+      border: 2px dashed var(--border-color);
+      color: var(--text-muted);
+    }
+    .empty-state h3 {
+      color: var(--text-main);
+      font-size: 1.25rem;
+      margin-bottom: 0.5rem;
+    }
+
+    /* Modal Sheet */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(15, 23, 42, 0.45);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 1rem;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal {
+      background: #fff;
+      border-radius: var(--radius);
+      width: 100%;
+      max-width: 520px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+      overflow: hidden;
+      animation: modalSlideUp 0.25s ease-out;
+    }
+
+    @keyframes modalSlideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .modal-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-header h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    .modal-close {
+      background: transparent;
+      border: none;
+      font-size: 1.5rem;
+      line-height: 1;
+      cursor: pointer;
+      color: var(--text-muted);
+    }
+
+    .modal-form {
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .form-group label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .form-group input,
+    .form-group select {
+      padding: 0.65rem 0.85rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+      outline: none;
+      font-size: 0.9rem;
+      transition: var(--transition);
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(88, 43, 232, 0.12);
+    }
+
+    .progress-preview {
+      font-size: 0.8rem;
+      color: var(--primary);
+      font-weight: 700;
+      margin-top: 0.1rem;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+    }
+
+    #importFileInput {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="brand">
+        <h1>Course Library</h1>
+        <p>Save and organize your courses from Udemy, Skillshare, Coursera & more.</p>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-outline" id="exportBtn">Export JSON</button>
+        <button class="btn btn-outline" id="importBtn">Import JSON</button>
+        <button class="btn btn-primary" id="openAddModalBtn">+ Add Course</button>
+        <input type="file" id="importFileInput" accept=".json" />
+      </div>
+    </header>
+
+    <!-- Toolbar / Controls -->
+    <div class="controls-bar">
+      <div class="section-title">
+        My Courses <span class="badge-count" id="coursesCount">0</span>
+      </div>
+      
+      <div class="filter-group">
+        <div class="search-box">
+          <input type="text" id="searchInput" placeholder="Search courses or instructor..." />
+        </div>
+        <select class="filter-select" id="platformFilter">
+          <option value="all">All Platforms</option>
+          <option value="Udemy">Udemy</option>
+          <option value="Coursera">Coursera</option>
+          <option value="Skillshare">Skillshare</option>
+          <option value="YouTube">YouTube</option>
+          <option value="Other">Other</option>
+        </select>
+        <button class="btn btn-danger" id="clearAllBtn">Clear All</button>
+      </div>
+    </div>
+
+    <!-- Course Cards Grid -->
+    <div class="courses-grid" id="coursesGrid"></div>
+  </div>
+
+  <!-- Modal Form -->
+  <div class="modal-overlay" id="courseModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modalTitle">Add New Course</h2>
+        <button class="modal-close" id="closeModalBtn">&times;</button>
+      </div>
+      <form class="modal-form" id="courseForm">
+        <input type="hidden" id="courseId" />
+        
+        <div class="form-group">
+          <label for="courseTitle">Course Title *</label>
+          <input type="text" id="courseTitle" required placeholder="e.g. 100 Days of Code™: Complete Python" />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="platform">Platform</label>
+            <select id="platform">
+              <option value="Udemy">Udemy</option>
+              <option value="Coursera">Coursera</option>
+              <option value="Skillshare">Skillshare</option>
+              <option value="YouTube">YouTube</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="instructor">Instructor</label>
+            <input type="text" id="instructor" placeholder="e.g. Dr. Angela Yu" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="duration">Duration (e.g., 57 Hours)</label>
+          <input type="text" id="duration" placeholder="e.g. 57 hours or 12 weeks" />
+        </div>
+
+        <!-- Lessons / Progress Calculation -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="completedLessons">Completed Lessons / Videos</label>
+            <input type="number" id="completedLessons" min="0" value="0" />
+          </div>
+          <div class="form-group">
+            <label for="totalLessons">Total Lessons / Videos *</label>
+            <input type="number" id="totalLessons" min="1" required value="10" />
+          </div>
+        </div>
+        <div class="progress-preview" id="progressPreview">Calculated Progress: 0%</div>
+
+        <div class="form-group">
+          <label for="courseUrl">Course URL</label>
+          <input type="url" id="courseUrl" placeholder="https://..." />
+        </div>
+
+        <div class="form-group">
+          <label for="imageUrl">Image URL (Cover)</label>
+          <input type="url" id="imageUrl" placeholder="https://images.unsplash.com/..." />
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="cancelModalBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="saveCourseBtn">Save Course</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Application Logic (OOP) -->
+  <script>
+    /**
+     * Entity: Course Model
+     */
+    class Course {
+      constructor({
+        id = crypto.randomUUID(),
+        title,
+        platform = 'Udemy',
+        instructor = 'Unknown',
+        duration = '0',
+        completedLessons = 0,
+        totalLessons = 1,
+        url = '#',
+        imageUrl = ''
+      }) {
+        this.id = id;
+        this.title = title;
+        this.platform = platform;
+        this.instructor = instructor;
+        this.duration = duration;
+        this.totalLessons = Math.max(1, parseInt(totalLessons, 10) || 1);
+        this.completedLessons = Math.min(this.totalLessons, Math.max(0, parseInt(completedLessons, 10) || 0));
+        this.url = url || '#';
+        this.imageUrl = imageUrl || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=800&auto=format&fit=crop';
+        this.createdAt = new Date().toISOString();
+      }
+
+      get progressPercentage() {
+        return Math.round((this.completedLessons / this.totalLessons) * 100);
+      }
+
+      setCompleted(count) {
+        const parsed = parseInt(count, 10);
+        if (!isNaN(parsed)) {
+          this.completedLessons = Math.min(this.totalLessons, Math.max(0, parsed));
+        }
+      }
+    }
+
+    /**
+     * Storage Manager
+     */
+    class StorageService {
+      static STORAGE_KEY = 'library_courses_data';
+
+      static getCourses() {
+        const raw = localStorage.getItem(this.STORAGE_KEY);
+        if (!raw) return [];
+        try {
+          return JSON.parse(raw);
+        } catch (e) {
+          console.error("Failed to parse storage data", e);
+          return [];
+        }
+      }
+
+      static saveCourses(courses) {
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(courses));
+      }
+
+      static clear() {
+        localStorage.removeItem(this.STORAGE_KEY);
+      }
+    }
+
+    /**
+     * UI & App Controller
+     */
+    class CourseApp {
+      constructor() {
+        this.courses = [];
+        this.filteredCourses = [];
+        
+        // DOM Elements
+        this.grid = document.getElementById('coursesGrid');
+        this.countBadge = document.getElementById('coursesCount');
+        this.modal = document.getElementById('courseModal');
+        this.form = document.getElementById('courseForm');
+        this.modalTitle = document.getElementById('modalTitle');
+        this.searchInput = document.getElementById('searchInput');
+        this.platformFilter = document.getElementById('platformFilter');
+        this.fileInput = document.getElementById('importFileInput');
+        this.completedInput = document.getElementById('completedLessons');
+        this.totalInput = document.getElementById('totalLessons');
+        this.progressPreview = document.getElementById('progressPreview');
+
+        this.init();
+      }
+
+      init() {
+        this.loadInitialData();
+        this.bindEvents();
+        this.applyFilter();
+      }
+
+      loadInitialData() {
+        const stored = StorageService.getCourses();
+        // Start empty if no stored data
+        if (stored && Array.isArray(stored) && stored.length > 0) {
+          this.courses = stored.map(c => new Course(c));
+        } else {
+          this.courses = [];
+        }
+      }
+
+      persist() {
+        StorageService.saveCourses(this.courses);
+        this.applyFilter();
+      }
+
+      bindEvents() {
+        // Modal toggles
+        document.getElementById('openAddModalBtn').addEventListener('click', () => this.openModal());
+        document.getElementById('closeModalBtn').addEventListener('click', () => this.closeModal());
+        document.getElementById('cancelModalBtn').addEventListener('click', () => this.closeModal());
+        
+        this.modal.addEventListener('click', (e) => {
+          if (e.target === this.modal) this.closeModal();
+        });
+
+        // Dynamic lesson calculation in modal
+        const updateModalProgressPreview = () => {
+          const completed = parseInt(this.completedInput.value, 10) || 0;
+          const total = parseInt(this.totalInput.value, 10) || 1;
+          const percent = Math.min(100, Math.max(0, Math.round((completed / Math.max(1, total)) * 100)));
+          this.progressPreview.innerText = `Calculated Progress: ${percent}%`;
+        };
+
+        this.completedInput.addEventListener('input', updateModalProgressPreview);
+        this.totalInput.addEventListener('input', updateModalProgressPreview);
+
+        // Form Submit
+        this.form.addEventListener('submit', (e) => this.handleFormSubmit(e));
+
+        // Search & Filter
+        this.searchInput.addEventListener('input', () => this.applyFilter());
+        this.platformFilter.addEventListener('change', () => this.applyFilter());
+
+        // Clear All
+        document.getElementById('clearAllBtn').addEventListener('click', () => {
+          if (this.courses.length === 0) return;
+          if (confirm("Are you sure you want to clear all courses?")) {
+            this.courses = [];
+            this.persist();
+          }
+        });
+
+        // Export & Import
+        document.getElementById('exportBtn').addEventListener('click', () => this.exportJSON());
+        document.getElementById('importBtn').addEventListener('click', () => this.fileInput.click());
+        this.fileInput.addEventListener('change', (e) => this.importJSON(e));
+      }
+
+      openModal(course = null) {
+        this.form.reset();
+        if (course) {
+          this.modalTitle.innerText = "Edit Course";
+          document.getElementById('courseId').value = course.id;
+          document.getElementById('courseTitle').value = course.title;
+          document.getElementById('platform').value = course.platform;
+          document.getElementById('instructor').value = course.instructor;
+          document.getElementById('duration').value = course.duration;
+          this.completedInput.value = course.completedLessons;
+          this.totalInput.value = course.totalLessons;
+          this.progressPreview.innerText = `Calculated Progress: ${course.progressPercentage}%`;
+          document.getElementById('courseUrl').value = course.url === '#' ? '' : course.url;
+          document.getElementById('imageUrl').value = course.imageUrl;
+        } else {
+          this.modalTitle.innerText = "Add New Course";
+          document.getElementById('courseId').value = "";
+          this.completedInput.value = 0;
+          this.totalInput.value = 10;
+          this.progressPreview.innerText = "Calculated Progress: 0%";
+        }
+        this.modal.classList.add('active');
+      }
+
+      closeModal() {
+        this.modal.classList.remove('active');
+      }
+
+      handleFormSubmit(e) {
+        e.preventDefault();
+        const id = document.getElementById('courseId').value;
+        const payload = {
+          title: document.getElementById('courseTitle').value.trim(),
+          platform: document.getElementById('platform').value,
+          instructor: document.getElementById('instructor').value.trim() || 'Instructor',
+          duration: document.getElementById('duration').value.trim() || 'N/A',
+          completedLessons: this.completedInput.value,
+          totalLessons: this.totalInput.value,
+          url: document.getElementById('courseUrl').value.trim(),
+          imageUrl: document.getElementById('imageUrl').value.trim()
+        };
+
+        if (id) {
+          const index = this.courses.findIndex(c => c.id === id);
+          if (index !== -1) {
+            this.courses[index] = new Course({ ...this.courses[index], ...payload, id });
+          }
+        } else {
+          const newCourse = new Course(payload);
+          this.courses.unshift(newCourse);
+        }
+
+        this.persist();
+        this.closeModal();
+      }
+
+      deleteCourse(id) {
+        if (confirm("Are you sure you want to delete this course?")) {
+          this.courses = this.courses.filter(c => c.id !== id);
+          this.persist();
+        }
+      }
+
+      updateLessonsPrompt(id) {
+        const course = this.courses.find(c => c.id === id);
+        if (!course) return;
+
+        const val = prompt(`Update completed lessons for "${course.title}" (Total: ${course.totalLessons}):`, course.completedLessons);
+        if (val !== null) {
+          course.setCompleted(val);
+          this.persist();
+        }
+      }
+
+      applyFilter() {
+        const q = this.searchInput.value.toLowerCase().trim();
+        const platform = this.platformFilter.value;
+
+        this.filteredCourses = this.courses.filter(item => {
+          const matchesSearch = item.title.toLowerCase().includes(q) || 
+                                item.instructor.toLowerCase().includes(q);
+          const matchesPlatform = (platform === 'all') || (item.platform.toLowerCase() === platform.toLowerCase());
+          return matchesSearch && matchesPlatform;
+        });
+
+        this.render();
+      }
+
+      render() {
+        this.countBadge.innerText = this.courses.length;
+        this.grid.innerHTML = "";
+
+        if (this.filteredCourses.length === 0) {
+          this.grid.innerHTML = `
+            <div class="empty-state">
+              <h3>No courses added yet</h3>
+              <p>Click on <strong>+ Add Course</strong> above to start tracking your learning journey.</p>
+            </div>
+          `;
+          return;
+        }
+
+        this.filteredCourses.forEach(course => {
+          const card = document.createElement('div');
+          card.className = 'course-card';
+          
+          const platformClass = course.platform.toLowerCase();
+          const percent = course.progressPercentage;
+
+          card.innerHTML = `
+            <div class="card-thumb-container">
+              <img class="card-thumb" src="${course.imageUrl}" alt="${course.title}" onerror="this.src='https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=800&auto=format&fit=crop'" />
+              <span class="platform-tag ${platformClass}">${course.platform}</span>
+            </div>
+            
+            <div class="card-content">
+              <h3 class="course-title" title="${course.title}">${course.title}</h3>
+              <div class="course-meta">Instructor: <span>${course.instructor}</span></div>
+              <div class="course-meta">Duration: <span>${course.duration}</span></div>
+
+              <!-- Calculated Progress UI -->
+              <div class="progress-section" title="Click to update completed lessons">
+                <div class="progress-header">
+                  <span>${course.completedLessons} / ${course.totalLessons} Lessons</span>
+                  <span>${percent}%</span>
+                </div>
+                <div class="progress-bar-bg" data-id="${course.id}">
+                  <div class="progress-bar-fill" style="width: ${percent}%;"></div>
+                </div>
+              </div>
+
+              <!-- Action buttons -->
+              <div class="card-actions">
+                <a href="${course.url}" target="_blank" class="btn btn-primary">Open Course</a>
+                <button class="btn btn-secondary btn-edit" title="Edit" data-id="${course.id}">✎</button>
+                <button class="btn btn-secondary btn-delete" title="Delete" data-id="${course.id}">Delete</button>
+              </div>
+            </div>
+          `;
+
+          // Event bindings on created card
+          card.querySelector('.btn-delete').addEventListener('click', () => this.deleteCourse(course.id));
+          card.querySelector('.btn-edit').addEventListener('click', () => this.openModal(course));
+          card.querySelector('.progress-bar-bg').addEventListener('click', () => this.updateLessonsPrompt(course.id));
+
+          this.grid.appendChild(card);
+        });
+      }
+
+      exportJSON() {
+        if (this.courses.length === 0) {
+          alert("No courses to export.");
+          return;
+        }
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.courses, null, 2));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", `courses_backup_${new Date().toISOString().slice(0,10)}.json`);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+      }
+
+      importJSON(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try {
+            const parsed = JSON.parse(event.target.result);
+            if (Array.isArray(parsed)) {
+              this.courses = parsed.map(c => new Course(c));
+              this.persist();
+              alert("Courses imported successfully!");
+            } else {
+              alert("Invalid JSON format. Expected an array of courses.");
+            }
+          } catch (err) {
+            alert("Error reading JSON file: " + err.message);
+          }
+        };
+        reader.readAsText(file);
+        e.target.value = '';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      new CourseApp();
+    });
+  </script>
+</body>
+</html>
